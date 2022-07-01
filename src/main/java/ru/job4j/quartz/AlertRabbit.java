@@ -20,22 +20,24 @@ public class AlertRabbit {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
 
-            init();
-            JobDataMap data = new JobDataMap();
-            data.put("connect", cn);
+            Properties loadProperties = loadProperties();
+            try (Connection connection = init(loadProperties)) {
+                JobDataMap data = new JobDataMap();
+                data.put("connect", connection);
 
-            JobDetail job = newJob(Rabbit.class).usingJobData(data).build();
-            int interval = Integer.parseInt(loadProperties().getProperty("rabbit.interval"));
-            SimpleScheduleBuilder times = simpleSchedule()
-                    .withIntervalInSeconds(interval)
-                    .repeatForever();
-            Trigger trigger = newTrigger()
-                    .startNow()
-                    .withSchedule(times)
-                    .build();
-            scheduler.scheduleJob(job, trigger);
-            Thread.sleep(10000);
-            scheduler.shutdown();
+                JobDetail job = newJob(Rabbit.class).usingJobData(data).build();
+                int interval = Integer.parseInt(loadProperties.getProperty("rabbit.interval"));
+                SimpleScheduleBuilder times = simpleSchedule()
+                        .withIntervalInSeconds(interval)
+                        .repeatForever();
+                Trigger trigger = newTrigger()
+                        .startNow()
+                        .withSchedule(times)
+                        .build();
+                scheduler.scheduleJob(job, trigger);
+                Thread.sleep(10000);
+                scheduler.shutdown();
+            }
         } catch (Exception se) {
             se.printStackTrace();
         }
@@ -51,18 +53,18 @@ public class AlertRabbit {
         return config;
     }
 
-    private static void init() {
+    private static Connection init(Properties properties) {
         try {
-            Properties config = loadProperties();
-            Class.forName(config.getProperty("driver-class-name"));
+            Class.forName(properties.getProperty("driver-class-name"));
             cn = DriverManager.getConnection(
-                    config.getProperty("url"),
-                    config.getProperty("username"),
-                    config.getProperty("password")
+                    properties.getProperty("url"),
+                    properties.getProperty("username"),
+                    properties.getProperty("password")
             );
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
+        return cn;
     }
 
     public static class Rabbit implements Job {
