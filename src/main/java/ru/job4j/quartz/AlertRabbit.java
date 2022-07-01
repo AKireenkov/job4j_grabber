@@ -4,6 +4,8 @@ import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.InputStream;
+import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.Properties;
 
 import static org.quartz.JobBuilder.newJob;
@@ -11,11 +13,18 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 public class AlertRabbit {
+    private static Connection cn;
+
     public static void main(String[] args) {
         try {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
-            JobDetail job = newJob(Rabbit.class).build();
+
+            init();
+            JobDataMap data = new JobDataMap();
+            data.put("connect", cn);
+
+            JobDetail job = newJob(Rabbit.class).usingJobData(data).build();
             int interval = Integer.parseInt(loadProperties().getProperty("rabbit.interval"));
             SimpleScheduleBuilder times = simpleSchedule()
                     .withIntervalInSeconds(interval)
@@ -25,7 +34,9 @@ public class AlertRabbit {
                     .withSchedule(times)
                     .build();
             scheduler.scheduleJob(job, trigger);
-        } catch (SchedulerException se) {
+            Thread.sleep(10000);
+            scheduler.shutdown();
+        } catch (Exception se) {
             se.printStackTrace();
         }
     }
@@ -37,12 +48,38 @@ public class AlertRabbit {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-       return config;
+        return config;
+    }
+
+    private static void init() {
+        try {
+            Properties config = loadProperties();
+            Class.forName(config.getProperty("driver-class-name"));
+            cn = DriverManager.getConnection(
+                    config.getProperty("url"),
+                    config.getProperty("username"),
+                    config.getProperty("password")
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static class Rabbit implements Job {
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
+            try (PreparedStatement statement = (
+                    (Connection) context.getJobDetail().getJobDataMap().get("connect")
+            )
+                    .prepareStatement("insert into rabbit (created_date) values (?)")) {
+                long millis = System.currentTimeMillis();
+                Timestamp timestamp = new Timestamp(millis);
+                LocalDateTime localDateTime = timestamp.toLocalDateTime();
+                statement.setTimestamp(1, Timestamp.valueOf(localDateTime));
+                statement.execute();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
             System.out.println("Rabbit runs here ...");
         }
     }
