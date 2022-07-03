@@ -53,17 +53,13 @@ public class AlertRabbit {
         return config;
     }
 
-    private static Connection init(Properties properties) {
-        try {
-            Class.forName(properties.getProperty("driver-class-name"));
-            cn = DriverManager.getConnection(
-                    properties.getProperty("url"),
-                    properties.getProperty("username"),
-                    properties.getProperty("password")
-            );
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
+    private static Connection init(Properties properties) throws SQLException, ClassNotFoundException {
+        Class.forName(properties.getProperty("driver-class-name"));
+        cn = DriverManager.getConnection(
+                properties.getProperty("url"),
+                properties.getProperty("username"),
+                properties.getProperty("password")
+        );
         return cn;
     }
 
