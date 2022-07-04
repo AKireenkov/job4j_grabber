@@ -39,7 +39,19 @@ public class HabrCareerParse {
                     e.printStackTrace();
                 }
                 System.out.printf("%s %s %s%n", vacancyName, link, localDateTime);
+                try {
+                    System.out.println(retrieveDescription(link));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             });
         }
+    }
+
+    private static String retrieveDescription(String link) throws IOException {
+        Connection description = Jsoup.connect(link);
+        Document documentDescription = description.get();
+        String descriptionElement = documentDescription.select(".basic-section--appearance-vacancy-description").first().text();
+        return (descriptionElement + System.lineSeparator());
     }
 }
