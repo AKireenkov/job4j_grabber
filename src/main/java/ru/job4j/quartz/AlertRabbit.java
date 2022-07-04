@@ -13,7 +13,6 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 public class AlertRabbit {
-    private static Connection cn;
 
     public static void main(String[] args) {
         try {
@@ -55,12 +54,11 @@ public class AlertRabbit {
 
     private static Connection init(Properties properties) throws SQLException, ClassNotFoundException {
         Class.forName(properties.getProperty("driver-class-name"));
-        cn = DriverManager.getConnection(
+        return DriverManager.getConnection(
                 properties.getProperty("url"),
                 properties.getProperty("username"),
                 properties.getProperty("password")
         );
-        return cn;
     }
 
     public static class Rabbit implements Job {
