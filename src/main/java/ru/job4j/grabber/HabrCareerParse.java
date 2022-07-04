@@ -57,7 +57,7 @@ public class HabrCareerParse {
     private static String retrieveDescription(String link) throws IOException {
         Connection description = Jsoup.connect(link);
         Document documentDescription = description.get();
-        String descriptionElement = documentDescription.select(".basic-section--appearance-vacancy-description").first().text();
-        return (descriptionElement + System.lineSeparator());
+        Element rows = documentDescription.selectFirst(".style-ugc");
+        return rows.text();
     }
 }
