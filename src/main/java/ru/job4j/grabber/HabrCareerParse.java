@@ -19,6 +19,12 @@ public class HabrCareerParse {
 
     private static final String PAGE_NUMBER = "?page=";
 
+    private final HabrCareerDateTimeParser habrCareerDateTimeParser;
+
+    public HabrCareerParse(HabrCareerDateTimeParser habrCareerDateTimeParser) {
+        this.habrCareerDateTimeParser = habrCareerDateTimeParser;
+    }
+
     public static void main(String[] args) throws IOException {
         for (int i = 1; i <= 5; i++) {
             Connection connection = Jsoup.connect(PAGE_LINK + PAGE_NUMBER + i);
