@@ -1,7 +1,6 @@
 package ru.job4j.grabber;
 
-import ru.job4j.grabber.utils.LocalDateTime;
-
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Post {

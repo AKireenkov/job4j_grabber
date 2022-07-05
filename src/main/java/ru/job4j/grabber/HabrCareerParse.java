@@ -11,8 +11,10 @@ import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-public class HabrCareerParse {
+public class HabrCareerParse implements Parse {
 
     private static final String SOURCE_LINK = "https://career.habr.com";
 
@@ -20,46 +22,60 @@ public class HabrCareerParse {
 
     private static final String PAGE_NUMBER = "?page=";
 
-    private final HabrCareerDateTimeParser habrCareerDateTimeParser;
+    public static final int PAGES = 5;
 
-    public HabrCareerParse(HabrCareerDateTimeParser habrCareerDateTimeParser) {
-        this.habrCareerDateTimeParser = habrCareerDateTimeParser;
+    private final DateTimeParser dateTimeParser;
+
+    public HabrCareerParse(DateTimeParser dateTimeParser) {
+        this.dateTimeParser = dateTimeParser;
     }
 
-    public static void main(String[] args) throws IOException {
-        for (int i = 1; i <= 5; i++) {
-            Connection connection = Jsoup.connect(PAGE_LINK + PAGE_NUMBER + i);
-            Document document = connection.get();
-            Elements rows = document.select(".vacancy-card__inner");
-
-            rows.forEach(row -> {
-                Element titleElement = row.select(".vacancy-card__title").first();
-                Element linkElement = titleElement.child(0);
-                Element dateElement = row.select("time").first();
-                String vacancyName = titleElement.text();
-                String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
-                String dateTime = dateElement.attr("datetime");
-                DateTimeParser dateTimeParser = new HabrCareerDateTimeParser();
-                LocalDateTime localDateTime = LocalDateTime.now();
-                try {
-                    localDateTime = dateTimeParser.parse(dateTime);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                System.out.printf("%s %s %s%n", vacancyName, link, localDateTime);
-                try {
-                    System.out.println(retrieveDescription(link));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-        }
+    public static void main(String[] args) {
+        HabrCareerParse parse = new HabrCareerParse(new HabrCareerDateTimeParser());
+        List<Post> posts = new ArrayList<>(parse.list(PAGE_LINK + PAGE_NUMBER));
+        posts.forEach(System.out::println);
     }
 
-    private static String retrieveDescription(String link) throws IOException {
+    private static String getDescription(String link) throws IOException {
         Connection description = Jsoup.connect(link);
         Document documentDescription = description.get();
         Element rows = documentDescription.selectFirst(".style-ugc");
         return rows.text();
+    }
+
+    private Post getPost(Element element) {
+        Element titleElement = element.select(".vacancy-card__title").first();
+        Element linkElement = titleElement.child(0);
+        Element dateElement = element.select("time").first();
+
+        String vacancyName = titleElement.text();
+        String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
+        String dateTime = dateElement.attr("datetime");
+        String description;
+        LocalDateTime created;
+        try {
+            created = dateTimeParser.parse(dateTime);
+            description = getDescription(link);
+        } catch (ParseException | IOException e) {
+            throw new IllegalArgumentException();
+        }
+        return new Post(vacancyName, link, description, created);
+    }
+
+    @Override
+    public List<Post> list(String link) {
+        List<Post> posts = new ArrayList<>();
+
+        for (int i = 1; i <= PAGES; i++) {
+            try {
+                Connection connection = Jsoup.connect(link + i);
+                Document document = connection.get();
+                Elements rows = document.select(".vacancy-card__inner");
+                rows.forEach(row -> posts.add(getPost(row)));
+            } catch (IOException e) {
+                throw new IllegalArgumentException();
+            }
+        }
+        return posts;
     }
 }
