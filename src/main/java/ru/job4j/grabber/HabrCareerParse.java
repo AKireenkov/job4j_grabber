@@ -5,11 +5,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import ru.job4j.grabber.utils.DateTimeParser;
 import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
-import ru.job4j.grabber.utils.LocalDateTime;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.LocalDateTime;
 
 public class HabrCareerParse {
 
@@ -38,9 +39,10 @@ public class HabrCareerParse {
                 String vacancyName = titleElement.text();
                 String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
                 String dateTime = dateElement.attr("datetime");
-                LocalDateTime localDateTime = new HabrCareerDateTimeParser();
+                DateTimeParser dateTimeParser = new HabrCareerDateTimeParser();
+                LocalDateTime localDateTime = LocalDateTime.now();
                 try {
-                    localDateTime = localDateTime.parse(dateTime);
+                    localDateTime = dateTimeParser.parse(dateTime);
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
