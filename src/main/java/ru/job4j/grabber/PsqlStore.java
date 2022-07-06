@@ -56,10 +56,9 @@ public class PsqlStore implements Store, AutoCloseable {
         Post post = null;
         try (PreparedStatement preparedStatement = cnn.prepareStatement("select * from post where id = ?")) {
             preparedStatement.setInt(1, id);
-            preparedStatement.execute();
 
             ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
+            if (resultSet.next()) {
                 post = getElementFromDB(resultSet);
             }
         } catch (SQLException e) {
@@ -95,20 +94,21 @@ public class PsqlStore implements Store, AutoCloseable {
         );
     }
 
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) {
         Properties cfg = loadProperties();
-        PsqlStore psqlStore = new PsqlStore(cfg);
+        try (PsqlStore psqlStore = new PsqlStore(cfg)) {
+            Post post = new Post(
+                    "java developer",
+                    "https://career.habr.com",
+                    "java",
+                    LocalDateTime.now()
+            );
+            psqlStore.save(post);
 
-        Post post = new Post(
-                "java developer",
-                "https://career.habr.com",
-                "java",
-                LocalDateTime.now()
-        );
-        psqlStore.save(post);
-
-        System.out.println(psqlStore.findById(8));
-        psqlStore.getAll().forEach(System.out::println);
-
+            System.out.println(psqlStore.findById(8));
+            psqlStore.getAll().forEach(System.out::println);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
