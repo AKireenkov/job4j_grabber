@@ -17,6 +17,7 @@ import static ru.job4j.grabber.HabrCareerParse.PAGE_NUMBER;
 
 public class Grabber implements Grab {
     private final Properties cfg = new Properties();
+    private static final String LINK = PAGE_LINK + PAGE_NUMBER;
 
     public Store store() throws SQLException {
         return new PsqlStore(cfg);
@@ -59,7 +60,7 @@ public class Grabber implements Grab {
             JobDataMap map = context.getJobDetail().getJobDataMap();
             Store store = (Store) map.get("store");
             Parse parse = (Parse) map.get("parse");
-            parse.list(PAGE_LINK + PAGE_NUMBER).forEach(
+            parse.list(LINK).forEach(
                     store::save
             );
             store.getAll().forEach(System.out::println);
