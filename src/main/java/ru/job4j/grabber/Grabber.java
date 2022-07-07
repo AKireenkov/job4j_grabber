@@ -46,7 +46,6 @@ public class Grabber implements Grab {
                     try (OutputStream out = socket.getOutputStream()) {
                         out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
                         for (Post post : store.getAll()) {
-
                             out.write
                                     (post.toString().getBytes());
                             out.write(System.lineSeparator().getBytes());
